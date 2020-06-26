@@ -10,6 +10,8 @@ const (
 	IntProperty PropertyType = iota
 	FloatProperty
 	BoolProperty
+	EnumProperty
+	ArrayProperty
 	StructProperty
 	ObjectProperty
 )
@@ -77,6 +79,12 @@ func readProperty(a *Archive) (Property, error) {
 
 	case "BoolProperty":
 		return readBoolProperty(name, dataSize, index, a)
+
+	case "ByteProperty":
+		return readEnumProperty(name, dataSize, index, a)
+
+	case "ArrayProperty":
+		return readArrayProperty(name, dataSize, index, a)
 
 	case "StructProperty":
 		return readStructProperty(name, dataSize, index, a)

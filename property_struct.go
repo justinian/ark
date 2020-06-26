@@ -14,7 +14,7 @@ func (p *structProperty) Name() Name         { return p.name }
 func (p *structProperty) Index() int         { return p.index }
 
 func (p *structProperty) String() string {
-	return fmt.Sprintf("%s StructProperty %s [%d]", p.structType, p.name, p.index)
+	return fmt.Sprintf("StructProperty %s [%d] = %s", p.name, p.index, p.structType)
 }
 
 func readStructProperty(name Name, dataSize, index int, a *Archive) (Property, error) {

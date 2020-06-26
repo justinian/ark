@@ -22,7 +22,7 @@ func (p *intProperty) String() string {
 		pre = "UI"
 	}
 
-	return fmt.Sprintf("%snt%dProperty %-28s [%d] = %d", pre, p.bytes*8, p.name, p.index, p.value)
+	return fmt.Sprintf(" %snt%dProperty %-28s [%d] = %d", pre, p.bytes*8, p.name, p.index, p.value)
 }
 
 func readIntProperty(name Name, signed bool, dataSize, index int, a *Archive) (Property, error) {
