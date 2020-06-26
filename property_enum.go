@@ -8,7 +8,7 @@ type enumProperty struct {
 	name      Name
 	index     int
 	enum      Name
-	value     int64
+	value     uint8
 	valueName Name
 }
 
@@ -44,7 +44,7 @@ func readEnumProperty(name Name, dataSize, index int, a *Archive) (Property, err
 		name:      name,
 		index:     index,
 		enum:      enum,
-		value:     value,
+		value:     uint8(value),
 		valueName: valueName,
 	}, nil
 }

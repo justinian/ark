@@ -11,6 +11,8 @@ const (
 	FloatProperty
 	BoolProperty
 	EnumProperty
+	StringProperty
+	NameProperty
 	ArrayProperty
 	StructProperty
 	ObjectProperty
@@ -82,6 +84,12 @@ func readProperty(a *Archive) (Property, error) {
 
 	case "ByteProperty":
 		return readEnumProperty(name, dataSize, index, a)
+
+	case "StrProperty":
+		return readStringProperty(name, dataSize, index, a)
+
+	case "NameProperty":
+		return readNameProperty(name, dataSize, index, a)
 
 	case "ArrayProperty":
 		return readArrayProperty(name, dataSize, index, a)
