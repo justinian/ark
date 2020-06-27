@@ -5,11 +5,10 @@ import (
 )
 
 type enumProperty struct {
-	name      Name
-	index     int
-	enum      Name
-	value     uint8
-	valueName Name
+	name  Name
+	index int
+	enum  Name
+	value Name
 }
 
 func (p *enumProperty) Type() PropertyType { return EnumProperty }
@@ -17,7 +16,7 @@ func (p *enumProperty) Name() Name         { return p.name }
 func (p *enumProperty) Index() int         { return p.index }
 
 func (p *enumProperty) String() string {
-	return fmt.Sprintf("  EnumProperty %-14s %-14s [%d] = %s(%d)", p.enum, p.name, p.index, p.valueName, p.value)
+	return fmt.Sprintf("  EnumProperty %-14s %-14s [%d] = %s", p.enum, p.name, p.index, p.value)
 }
 
 func readEnumProperty(name Name, dataSize, index int, a *Archive) (Property, error) {
@@ -30,21 +29,15 @@ func readEnumProperty(name Name, dataSize, index int, a *Archive) (Property, err
 		return readIntProperty(name, false, 1, index, a)
 	}
 
-	valueName, err := a.readName()
+	value, err := a.readName()
 	if err != nil {
-		return nil, fmt.Errorf("Reading enum value name: %w", err)
-	}
-
-	value, err := a.readIntOfSize(1)
-	if err != nil {
-		return nil, fmt.Errorf("Reading int value: %w", err)
+		return nil, fmt.Errorf("Reading enum value: %w", err)
 	}
 
 	return &enumProperty{
-		name:      name,
-		index:     index,
-		enum:      enum,
-		value:     uint8(value),
-		valueName: valueName,
+		name:  name,
+		index: index,
+		enum:  enum,
+		value: value,
 	}, nil
 }
