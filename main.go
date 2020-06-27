@@ -7,6 +7,8 @@ import (
 )
 
 func main() {
+	log.SetOutput(os.Stdout)
+
 	if len(os.Args) != 2 {
 		fmt.Fprintf(os.Stderr, "Usage: %s <savefile>\n", os.Args[0])
 		os.Exit(1)

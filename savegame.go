@@ -10,8 +10,9 @@ type SaveGame struct {
 	SaveCount    int
 	DataFiles    []string
 	EmbeddedData []*Embed
-	ObjectMap    map[int][]string
+	DataFileMap  map[int][]string
 	Objects      []*GameObject
+	ObjectMap    map[string][]*GameObject
 }
 
 func ReadSaveGame(a *Archive) (*SaveGame, error) {
@@ -38,7 +39,7 @@ func ReadSaveGame(a *Archive) (*SaveGame, error) {
 		return nil, err
 	}
 
-	err = s.readObjectMap(a)
+	err = s.readDataFileMap(a)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +92,7 @@ func (s *SaveGame) readEmbeds(a *Archive) error {
 	return nil
 }
 
-func (s *SaveGame) readObjectMap(a *Archive) error {
+func (s *SaveGame) readDataFileMap(a *Archive) error {
 	mapCount, err := a.readInt()
 	if err != nil {
 		return fmt.Errorf("Reading number of object map entries: %w", err)
@@ -99,7 +100,7 @@ func (s *SaveGame) readObjectMap(a *Archive) error {
 
 	log.Printf("Reading %d object map entries", mapCount)
 
-	s.ObjectMap = make(map[int][]string)
+	s.DataFileMap = make(map[int][]string)
 	for i := 0; i < mapCount; i++ {
 		level, err := a.readInt()
 		if err != nil {
@@ -121,7 +122,7 @@ func (s *SaveGame) readObjectMap(a *Archive) error {
 			}
 		}
 
-		s.ObjectMap[level] = names
+		s.DataFileMap[level] = names
 	}
 
 	return nil
@@ -136,6 +137,7 @@ func (s *SaveGame) readGameObjects(a *Archive) error {
 	log.Printf("Reading %d game objects", count)
 
 	s.Objects = make([]*GameObject, count)
+	s.ObjectMap = make(map[string][]*GameObject, count)
 	for i := range s.Objects {
 		obj, err := readGameObject(a)
 		if err != nil {
@@ -143,18 +145,17 @@ func (s *SaveGame) readGameObjects(a *Archive) error {
 		}
 
 		s.Objects[i] = obj
+		for i := range obj.Names {
+			key := obj.Names[i].String()
+			s.ObjectMap[key] = append(s.ObjectMap[key], obj)
+		}
 	}
 
-	totalProperties := 0
 	for _, o := range s.Objects {
 		o.Properties, err = a.readProperties(o.propertiesOffset)
 		if err != nil {
 			return err
 		}
-
-		totalProperties += len(o.Properties)
-		log.Println(o)
 	}
-
 	return nil
 }

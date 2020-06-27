@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 )
 
 type PropertyType uint
@@ -116,10 +115,6 @@ func readPropertyMap(a *Archive) (PropertyMap, error) {
 		}
 		propMap[index] = p
 		properties[key] = propMap
-	}
-
-	for k, v := range properties {
-		log.Printf("   Property %s: %+v", k, v)
 	}
 
 	return properties, nil
