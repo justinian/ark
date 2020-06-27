@@ -3,21 +3,17 @@ package main
 import "fmt"
 
 type arrayProperty struct {
-	name      Name
-	index     int
 	arrayType Name
 	data      []byte
 }
 
 func (p *arrayProperty) Type() PropertyType { return ArrayProperty }
-func (p *arrayProperty) Name() Name         { return p.name }
-func (p *arrayProperty) Index() int         { return p.index }
 
 func (p *arrayProperty) String() string {
-	return fmt.Sprintf(" ArrayProperty %s [%d] = %s", p.name, p.index, p.arrayType)
+	return fmt.Sprintf("ArrayProperty(%s)", p.arrayType)
 }
 
-func readArrayProperty(name Name, dataSize, index int, a *Archive) (Property, error) {
+func readArrayProperty(dataSize int, a *Archive) (Property, error) {
 	arrayType, err := a.readName()
 	if err != nil {
 		return nil, fmt.Errorf("Reading array type: %w", err)
@@ -32,8 +28,6 @@ func readArrayProperty(name Name, dataSize, index int, a *Archive) (Property, er
 	}
 
 	return &arrayProperty{
-		name:      name,
-		index:     index,
 		arrayType: arrayType,
 		data:      data,
 	}, nil

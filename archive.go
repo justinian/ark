@@ -51,7 +51,7 @@ func NewArchive(path string) (*Archive, error) {
 
 	err = archive.readNameTable(header.NameTableOffset)
 	if err != nil {
-		return nil, fmt.Errorf("Reading name table: %e", err)
+		return nil, fmt.Errorf("Reading name table: %w", err)
 	}
 
 	return &archive, nil
@@ -60,17 +60,17 @@ func NewArchive(path string) (*Archive, error) {
 func (a *Archive) readNameTable(offset int32) error {
 	savedPosition, err := a.stream.Seek(0, io.SeekCurrent)
 	if err != nil {
-		return fmt.Errorf("Determining current file position: %e", err)
+		return fmt.Errorf("Determining current file position: %w", err)
 	}
 
 	_, err = a.stream.Seek(int64(offset), io.SeekStart)
 	if err != nil {
-		return fmt.Errorf("Seeking to name table offset: %e", err)
+		return fmt.Errorf("Seeking to name table offset: %w", err)
 	}
 
 	nameCount, err := a.readInt()
 	if err != nil {
-		return fmt.Errorf("Reading name table count: %e", err)
+		return fmt.Errorf("Reading name table count: %w", err)
 	}
 
 	log.Printf("Reading %d name table entries", nameCount)
@@ -79,13 +79,13 @@ func (a *Archive) readNameTable(offset int32) error {
 	for i := range a.nameTable {
 		a.nameTable[i], err = a.readString()
 		if err != nil {
-			return fmt.Errorf("Reading name entry: %e", err)
+			return fmt.Errorf("Reading name entry: %w", err)
 		}
 	}
 
 	_, err = a.stream.Seek(savedPosition, io.SeekStart)
 	if err != nil {
-		return fmt.Errorf("Returning from name table offset: %e", err)
+		return fmt.Errorf("Returning from name table offset: %w", err)
 	}
 	return nil
 }
@@ -185,37 +185,26 @@ func (a *Archive) readFloat() (float32, error) {
 	return number, nil
 }
 
-func (a *Archive) readProperties(offset int) ([]Property, error) {
+func (a *Archive) readProperties(offset int) (PropertyMap, error) {
 	savedPosition, err := a.stream.Seek(0, io.SeekCurrent)
 	if err != nil {
-		return nil, fmt.Errorf("Determining current file position: %e", err)
+		return nil, fmt.Errorf("Determining current file position: %w", err)
 	}
 
 	totalOffset := int64(offset) + int64(a.propertiesOffset)
 	_, err = a.stream.Seek(totalOffset, io.SeekStart)
 	if err != nil {
-		return nil, fmt.Errorf("Seeking to property offset: %e", err)
+		return nil, fmt.Errorf("Seeking to property offset: %w", err)
 	}
 
-	var properties []Property
-
-	for {
-		p, err := readProperty(a)
-		if err != nil {
-			return nil, fmt.Errorf("Reading property: %w", err)
-		}
-
-		if p == nil {
-			break
-		}
-
-		properties = append(properties, p)
-		log.Printf("   Property: %s", p)
+	properties, err := readPropertyMap(a)
+	if err != nil {
+		return nil, fmt.Errorf("Reading property map: %w", err)
 	}
 
 	_, err = a.stream.Seek(savedPosition, io.SeekStart)
 	if err != nil {
-		return nil, fmt.Errorf("Returning from property offset: %e", err)
+		return nil, fmt.Errorf("Returning from property offset: %w", err)
 	}
 
 	return properties, nil

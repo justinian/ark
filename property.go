@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 )
 
 type PropertyType uint
+type PropertyMap map[string]map[int]Property
 
 const (
 	IntProperty PropertyType = iota
@@ -20,87 +22,105 @@ const (
 
 type Property interface {
 	fmt.Stringer
-	Name() Name
 	Type() PropertyType
-	Index() int
 }
 
-func readProperty(a *Archive) (Property, error) {
-	name, err := a.readName()
-	if err != nil {
-		return nil, fmt.Errorf("Reading property name: %w", err)
+func readPropertyMap(a *Archive) (PropertyMap, error) {
+	properties := make(PropertyMap)
+
+	for {
+		name, err := a.readName()
+		if err != nil {
+			return nil, fmt.Errorf("Reading property name: %w", err)
+		}
+
+		if name.IsNone() {
+			break
+		}
+
+		propertyType, err := a.readName()
+		if err != nil {
+			return nil, fmt.Errorf("Reading property type: %w", err)
+		}
+
+		dataSize, err := a.readInt()
+		if err != nil {
+			return nil, fmt.Errorf("Reading property size: %w", err)
+		}
+
+		index, err := a.readInt()
+		if err != nil {
+			return nil, fmt.Errorf("Reading property index: %w", err)
+		}
+
+		var p Property
+
+		switch propertyType.Name {
+
+		case "IntProperty":
+			fallthrough
+		case "Int8Property":
+			fallthrough
+		case "Int16Property":
+			fallthrough
+		case "Int32Property":
+			fallthrough
+		case "Int64Property":
+			p, err = readIntProperty(true, dataSize, a)
+
+		case "UIntProperty":
+			fallthrough
+		case "UInt8Property":
+			fallthrough
+		case "UInt16Property":
+			fallthrough
+		case "UInt32Property":
+			fallthrough
+		case "UInt64Property":
+			p, err = readIntProperty(false, dataSize, a)
+
+		case "FloatProperty":
+			fallthrough
+		case "DoubleProperty":
+			p, err = readFloatProperty(dataSize, a)
+
+		case "BoolProperty":
+			p, err = readBoolProperty(dataSize, a)
+
+		case "ByteProperty":
+			p, err = readEnumProperty(dataSize, a)
+
+		case "StrProperty":
+			p, err = readStringProperty(dataSize, a)
+
+		case "NameProperty":
+			p, err = readNameProperty(dataSize, a)
+
+		case "ArrayProperty":
+			p, err = readArrayProperty(dataSize, a)
+
+		case "StructProperty":
+			p, err = readStructProperty(dataSize, a)
+
+		case "ObjectProperty":
+			p, err = readObjectProperty(dataSize, a)
+
+		default:
+			return nil, fmt.Errorf("Unknown property type %s", propertyType)
+		}
+
+		key := name.String()
+		propMap, ok := properties[key]
+		if !ok {
+			propMap = make(map[int]Property)
+		}
+		propMap[index] = p
+		properties[key] = propMap
 	}
 
-	if name.IsNone() {
-		return nil, nil
+	for k, v := range properties {
+		log.Printf("   Property %s: %+v", k, v)
 	}
 
-	propertyType, err := a.readName()
-	if err != nil {
-		return nil, fmt.Errorf("Reading property type: %w", err)
-	}
-
-	dataSize, err := a.readInt()
-	if err != nil {
-		return nil, fmt.Errorf("Reading property size: %w", err)
-	}
-
-	index, err := a.readInt()
-	if err != nil {
-		return nil, fmt.Errorf("Reading property index: %w", err)
-	}
-
-	switch propertyType.Name {
-
-	case "IntProperty":
-		fallthrough
-	case "Int8Property":
-		fallthrough
-	case "Int16Property":
-		fallthrough
-	case "Int32Property":
-		fallthrough
-	case "Int64Property":
-		return readIntProperty(name, true, dataSize, index, a)
-
-	case "UIntProperty":
-		fallthrough
-	case "UInt8Property":
-		fallthrough
-	case "UInt16Property":
-		fallthrough
-	case "UInt32Property":
-		fallthrough
-	case "UInt64Property":
-		return readIntProperty(name, false, dataSize, index, a)
-
-	case "FloatProperty":
-		fallthrough
-	case "DoubleProperty":
-		return readFloatProperty(name, dataSize, index, a)
-
-	case "BoolProperty":
-		return readBoolProperty(name, dataSize, index, a)
-
-	case "ByteProperty":
-		return readEnumProperty(name, dataSize, index, a)
-
-	case "StrProperty":
-		return readStringProperty(name, dataSize, index, a)
-
-	case "NameProperty":
-		return readNameProperty(name, dataSize, index, a)
-
-	case "ArrayProperty":
-		return readArrayProperty(name, dataSize, index, a)
-
-	case "StructProperty":
-		return readStructProperty(name, dataSize, index, a)
-
-	case "ObjectProperty":
-		return readObjectProperty(name, dataSize, index, a)
-
-	default:
-		return nil, fmt.Errorf("Unknown property type %s", propertyType)
-	}
+	return properties, nil
 }

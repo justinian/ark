@@ -6,20 +6,16 @@ import (
 )
 
 type floatProperty struct {
-	name  Name
-	index int
 	value float64
 }
 
 func (p *floatProperty) Type() PropertyType { return FloatProperty }
-func (p *floatProperty) Name() Name         { return p.name }
-func (p *floatProperty) Index() int         { return p.index }
 
 func (p *floatProperty) String() string {
-	return fmt.Sprintf(" FloatProperty %-28s [%d] = %f", p.name, p.index, p.value)
+	return fmt.Sprintf("FloatProperty(%f)", p.value)
 }
 
-func readFloatProperty(name Name, dataSize, index int, a *Archive) (Property, error) {
+func readFloatProperty(dataSize int, a *Archive) (Property, error) {
 	var err error
 	var value float64
 
@@ -37,8 +33,6 @@ func readFloatProperty(name Name, dataSize, index int, a *Archive) (Property, er
 	}
 
 	return &floatProperty{
-		name:  name,
-		index: index,
 		value: value,
 	}, nil
 }

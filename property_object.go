@@ -8,15 +8,11 @@ const (
 )
 
 type objectProperty struct {
-	name  Name
-	index int
-	id    int
-	path  Name
+	id   int
+	path Name
 }
 
 func (p *objectProperty) Type() PropertyType { return ObjectProperty }
-func (p *objectProperty) Name() Name         { return p.name }
-func (p *objectProperty) Index() int         { return p.index }
 
 func (p *objectProperty) String() string {
 	var ref string
@@ -26,10 +22,10 @@ func (p *objectProperty) String() string {
 		ref = p.path.Name
 	}
 
-	return fmt.Sprintf("ObjectProperty %s %s [%d]", p.name, ref, p.index)
+	return fmt.Sprintf("ObjectProperty(%s)", ref)
 }
 
-func readObjectProperty(name Name, dataSize, index int, a *Archive) (Property, error) {
+func readObjectProperty(dataSize int, a *Archive) (Property, error) {
 	if dataSize < 8 {
 		return nil, fmt.Errorf("Out of date object property: size too small")
 	}
@@ -52,9 +48,7 @@ func readObjectProperty(name Name, dataSize, index int, a *Archive) (Property, e
 	}
 
 	return &objectProperty{
-		name:  name,
-		index: index,
-		id:    objId,
-		path:  objPath,
+		id:   objId,
+		path: objPath,
 	}, nil
 }

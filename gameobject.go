@@ -12,7 +12,7 @@ type GameObject struct {
 	Names      []Name
 	IsItem     bool
 	Location   Location
-	Properties []Property
+	Properties PropertyMap
 
 	FromDataFile     bool
 	DataFileIndex    int
