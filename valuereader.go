@@ -12,6 +12,7 @@ type valueReader interface {
 
 	skip(size int) error
 	subReader(length int) (valueReader, error)
+	subReaderAt(offset int) (valueReader, error)
 
 	readInt() (int, error)
 	readIntOfSize(size int) (int64, error)
@@ -19,6 +20,7 @@ type valueReader interface {
 	readString() (string, error)
 	readBool() (bool, error)
 	readName() (Name, error)
+	readStringTable() ([]string, error)
 }
 
 type sliceValueReader struct {
@@ -133,15 +135,38 @@ func (vr *sliceValueReader) readName() (Name, error) {
 	}, nil
 }
 
+func (vr *sliceValueReader) readStringTable() ([]string, error) {
+	numStrings, err := vr.readInt()
+	if err != nil {
+		return nil, fmt.Errorf("Reading number of strings:\n%w", err)
+	}
+
+	stringTable := make([]string, numStrings)
+	for i := range stringTable {
+		s, err := vr.readString()
+		if err != nil {
+			return nil, fmt.Errorf("Reading string table entry:\n%w", err)
+		}
+		stringTable[i] = s
+	}
+
+	return stringTable, nil
+}
+
 func (vr *sliceValueReader) subReader(length int) (valueReader, error) {
 	svr := &sliceValueReader{
-		data:      make([]byte, length),
+		data:      vr.data[vr.offset : vr.offset+length],
 		nameTable: vr.nameTable,
 	}
 
-	_, err := io.ReadFull(vr, svr.data)
-	if err != nil {
-		return nil, err
+	err := vr.skip(length)
+	return svr, err
+}
+
+func (vr *sliceValueReader) subReaderAt(offset int) (valueReader, error) {
+	svr := &sliceValueReader{
+		data:      vr.data[offset:],
+		nameTable: vr.nameTable,
 	}
 
 	return svr, nil

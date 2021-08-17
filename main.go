@@ -12,7 +12,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	archive, err := NewArchive(os.Args[1])
+	archive, err := OpenArchive(os.Args[1])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not open save file:\n%s\n", err)
 		os.Exit(1)
