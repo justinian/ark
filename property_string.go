@@ -4,23 +4,20 @@ import (
 	"fmt"
 )
 
-type stringProperty struct {
-	value string
-}
+type stringProperty string
 
-func (p *stringProperty) Type() PropertyType { return StringProperty }
+func (p stringProperty) Type() PropertyType { return StringProperty }
+func (p stringProperty) String() string     { return string(p) }
 
-func (p *stringProperty) String() string {
-	return fmt.Sprintf("StringProperty(%s)", p.value)
-}
-
-func readStringProperty(dataSize int, a *Archive) (Property, error) {
-	value, err := a.readString()
+func readStringProperty(dataSize int, vr valueReader) (Property, error) {
+	value, err := vr.readString()
 	if err != nil {
 		return nil, fmt.Errorf("Reading string value: %w", err)
 	}
 
-	return &stringProperty{
-		value: value,
-	}, nil
+	return stringProperty(value), nil
+}
+
+func init() {
+	addPropertyType("StrProperty", 0, readStringProperty, nil)
 }

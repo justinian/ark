@@ -5,33 +5,37 @@ import (
 )
 
 type enumProperty struct {
-	enum  Name
-	value Name
+	Enum  Name `json:"enum"`
+	Value Name `json:"value"`
 }
 
 func (p *enumProperty) Type() PropertyType { return EnumProperty }
 
 func (p *enumProperty) String() string {
-	return fmt.Sprintf("EnumProperty(%s : %s)", p.enum, p.value)
+	return fmt.Sprintf("EnumProperty(%s : %s)", p.Enum, p.Value)
 }
 
-func readEnumProperty(dataSize int, a *Archive) (Property, error) {
-	enum, err := a.readName()
+func readEnumProperty(dataSize int, vr valueReader) (Property, error) {
+	enum, err := vr.readName()
 	if err != nil {
 		return nil, fmt.Errorf("Reading enum name: %w", err)
 	}
 
 	if enum.IsNone() {
-		return readIntProperty(false, 1, a)
+		return readUIntProperty(1, vr)
 	}
 
-	value, err := a.readName()
+	value, err := vr.readName()
 	if err != nil {
 		return nil, fmt.Errorf("Reading enum value: %w", err)
 	}
 
 	return &enumProperty{
-		enum:  enum,
-		value: value,
+		Enum:  enum,
+		Value: value,
 	}, nil
+}
+
+func init() {
+	addPropertyType("ByteProperty", 1, readEnumProperty, nil)
 }

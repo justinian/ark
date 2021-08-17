@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
 	"os"
 )
 
@@ -43,51 +42,68 @@ func NewArchive(path string) (*Archive, error) {
 		propertiesOffset:  header.PropertiesBlockOffset,
 	}
 
-	log.Printf("Parsed archive header version %d", archive.version)
+	fmt.Printf("Parsed archive header version %d\n", archive.version)
 
-	if archive.version <= 5 {
+	if archive.version <= 8 {
 		return nil, fmt.Errorf("Save format version %d file is too old.", archive.version)
 	}
 
 	err = archive.readNameTable(header.NameTableOffset)
 	if err != nil {
-		return nil, fmt.Errorf("Reading name table: %w", err)
+		return nil, fmt.Errorf("Reading name table:\n%w", err)
 	}
 
 	return &archive, nil
 }
 
+func (a *Archive) readStringTable() ([]string, error) {
+	numStrings, err := a.readInt()
+	if err != nil {
+		return nil, fmt.Errorf("Reading number of strings:\n%w", err)
+	}
+
+	stringTable := make([]string, numStrings)
+	for i := range stringTable {
+		s, err := a.readString()
+		if err != nil {
+			return nil, fmt.Errorf("Reading string table entry:\n%w", err)
+		}
+		stringTable[i] = s
+	}
+
+	return stringTable, nil
+}
+
 func (a *Archive) readNameTable(offset int32) error {
 	savedPosition, err := a.stream.Seek(0, io.SeekCurrent)
 	if err != nil {
-		return fmt.Errorf("Determining current file position: %w", err)
+		return fmt.Errorf("Determining current file position:\n%w", err)
 	}
 
 	_, err = a.stream.Seek(int64(offset), io.SeekStart)
 	if err != nil {
-		return fmt.Errorf("Seeking to name table offset: %w", err)
+		return fmt.Errorf("Seeking to name table offset:\n%w", err)
 	}
 
-	nameCount, err := a.readInt()
+	a.nameTable, err = a.readStringTable()
 	if err != nil {
-		return fmt.Errorf("Reading name table count: %w", err)
-	}
-
-	log.Printf("Reading %d name table entries", nameCount)
-
-	a.nameTable = make([]string, nameCount)
-	for i := range a.nameTable {
-		a.nameTable[i], err = a.readString()
-		if err != nil {
-			return fmt.Errorf("Reading name entry: %w", err)
-		}
+		return err
 	}
 
 	_, err = a.stream.Seek(savedPosition, io.SeekStart)
 	if err != nil {
-		return fmt.Errorf("Returning from name table offset: %w", err)
+		return fmt.Errorf("Returning from name table offset:\n%w", err)
+	}
+
+	for i, n := range a.nameTable {
+		fmt.Printf("name %-4x : %s\n", i, n)
 	}
 	return nil
+}
+
+func (a *Archive) skip(size int) error {
+	_, err := a.stream.Seek(int64(size), io.SeekCurrent)
+	return err
 }
 
 func (a *Archive) readInt() (int, error) {
@@ -134,7 +150,9 @@ func (a *Archive) readString() (string, error) {
 		return "", err
 	}
 
-	if length < 0 {
+	if length == 0 {
+		return "", nil
+	} else if length < 0 {
 		length *= -2
 	}
 
@@ -188,7 +206,7 @@ func (a *Archive) readFloat() (float32, error) {
 func (a *Archive) readProperties(offset int) (PropertyMap, error) {
 	savedPosition, err := a.stream.Seek(0, io.SeekCurrent)
 	if err != nil {
-		return nil, fmt.Errorf("Determining current file position: %w", err)
+		return nil, fmt.Errorf("Determining current file position:\n%w", err)
 	}
 
 	totalOffset := int64(offset) + int64(a.propertiesOffset)
@@ -199,15 +217,29 @@ func (a *Archive) readProperties(offset int) (PropertyMap, error) {
 
 	properties, err := readPropertyMap(a)
 	if err != nil {
-		return nil, fmt.Errorf("Reading property map: %w", err)
+		return nil, fmt.Errorf("Reading property map:\n%w", err)
 	}
 
 	_, err = a.stream.Seek(savedPosition, io.SeekStart)
 	if err != nil {
-		return nil, fmt.Errorf("Returning from property offset: %w", err)
+		return nil, fmt.Errorf("Returning from property offset:\n%w", err)
 	}
 
 	return properties, nil
+}
+
+func (a *Archive) subReader(length int) (valueReader, error) {
+	vr := &sliceValueReader{
+		data:      make([]byte, length),
+		nameTable: a.nameTable,
+	}
+
+	_, err := io.ReadFull(a.stream, vr.data)
+	if err != nil {
+		return nil, err
+	}
+
+	return vr, nil
 }
 
 func (a *Archive) Read(b []byte) (int, error) {

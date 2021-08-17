@@ -3,8 +3,8 @@ package main
 import "fmt"
 
 type Name struct {
-	Name     string
-	Instance int
+	Name     string `json:"name"`
+	Instance int    `json:"instance"`
 }
 
 func (n Name) String() string {

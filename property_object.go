@@ -8,29 +8,25 @@ const (
 )
 
 type objectProperty struct {
-	id   int
-	path Name
+	Id   int  `json:"id"`
+	Path Name `json:"path"`
 }
 
 func (p *objectProperty) Type() PropertyType { return ObjectProperty }
 
 func (p *objectProperty) String() string {
 	var ref string
-	if p.id != 0 {
-		ref = fmt.Sprintf("int:%d", p.id)
+	if p.Id != 0 {
+		ref = fmt.Sprintf("int:%d", p.Id)
 	} else {
-		ref = p.path.Name
+		ref = p.Path.Name
 	}
 
 	return fmt.Sprintf("ObjectProperty(%s)", ref)
 }
 
-func readObjectProperty(dataSize int, a *Archive) (Property, error) {
-	if dataSize < 8 {
-		return nil, fmt.Errorf("Out of date object property: size too small")
-	}
-
-	objType, err := a.readInt()
+func readObjectProperty(dataSize int, vr valueReader) (Property, error) {
+	objType, err := vr.readInt()
 	if err != nil {
 		return nil, fmt.Errorf("Reading object type: %w", err)
 	}
@@ -40,15 +36,19 @@ func readObjectProperty(dataSize int, a *Archive) (Property, error) {
 
 	switch objType {
 	case ObjectTypeId:
-		objId, err = a.readInt()
+		objId, err = vr.readInt()
 	case ObjectTypePath:
-		objPath, err = a.readName()
+		objPath, err = vr.readName()
 	default:
 		return nil, fmt.Errorf("Unsupported object reference typ %d", objType)
 	}
 
 	return &objectProperty{
-		id:   objId,
-		path: objPath,
+		Id:   objId,
+		Path: objPath,
 	}, nil
+}
+
+func init() {
+	addPropertyType("ObjectProperty", 0, readObjectProperty, nil)
 }

@@ -2,20 +2,21 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 )
 
 type GameObject struct {
-	UUID       uuid.UUID
-	ClassName  Name
-	Names      []Name
-	IsItem     bool
-	Location   Location
-	Properties PropertyMap
+	UUID       uuid.UUID   `json:"uuid"`
+	ClassName  Name        `json:"className"`
+	Names      []Name      `json:"names"`
+	IsItem     bool        `json:"isItem"`
+	Location   Location    `json:"location"`
+	Properties PropertyMap `json:"properties"`
 
-	FromDataFile     bool
-	DataFileIndex    int
+	FromDataFile     bool `json:"fromDataFile"`
+	DataFileIndex    int  `json:"dataFileIndex"`
 	propertiesOffset int
 }
 
@@ -25,6 +26,11 @@ func (o *GameObject) String() string {
 		item = "*"
 	}
 	return fmt.Sprintf("Object %-12s: %s%s", o.ClassName, o.Names, item)
+}
+
+func (o *GameObject) isCryopod() bool {
+	return strings.Contains(o.ClassName.Name, "Cryop") ||
+		strings.Contains(o.ClassName.Name, "SoulTrap_")
 }
 
 func readGameObject(a *Archive) (*GameObject, error) {

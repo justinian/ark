@@ -7,16 +7,38 @@ import (
 type PropertyType uint
 type PropertyMap map[string]map[int]Property
 
+func (pm PropertyMap) Get(name string, index int) Property {
+	if props, ok := pm[name]; ok {
+		if p, ok := props[index]; ok {
+			return p
+		}
+	}
+	return nil
+}
+
 const (
-	IntProperty PropertyType = iota
+	UnknownProperty PropertyType = iota
+
+	IntProperty
 	FloatProperty
 	BoolProperty
 	EnumProperty
 	StringProperty
 	NameProperty
 	ArrayProperty
-	StructProperty
 	ObjectProperty
+	ByteArrayProperty
+
+	StructColorProperty
+	StructLinearColorProperty
+	StructVectorProperty
+	StructVector2DProperty
+	StructQuatProperty
+
+	StructNetIdProperty
+	StructDoublesProperty
+
+	StructPropertyListProperty
 )
 
 type Property interface {
@@ -24,88 +46,63 @@ type Property interface {
 	Type() PropertyType
 }
 
-func readPropertyMap(a *Archive) (PropertyMap, error) {
+type propertyReader func(int, valueReader) (Property, error)
+type propertyArrayReader func(int, int, valueReader) ([]Property, error)
+
+type propertyType struct {
+	reader      propertyReader
+	arrayReader propertyArrayReader
+	defaultSize int
+}
+
+var propertyTypes map[string]propertyType
+
+func addPropertyType(name string, defaultSize int, reader propertyReader, arrayReader propertyArrayReader) {
+	if propertyTypes == nil {
+		propertyTypes = make(map[string]propertyType, 20)
+	}
+	propertyTypes[name] = propertyType{reader: reader, arrayReader: arrayReader, defaultSize: defaultSize}
+}
+
+func readPropertyMap(vr valueReader) (PropertyMap, error) {
 	properties := make(PropertyMap)
 
+	count := 0
 	for {
-		name, err := a.readName()
+		name, err := vr.readName()
 		if err != nil {
-			return nil, fmt.Errorf("Reading property name: %w", err)
+			return nil, fmt.Errorf("Reading property name:\n%w", err)
 		}
 
 		if name.IsNone() {
 			break
 		}
 
-		propertyType, err := a.readName()
+		propertyType, err := vr.readName()
 		if err != nil {
-			return nil, fmt.Errorf("Reading property type: %w", err)
+			return nil, fmt.Errorf("Reading property type:\n%w", err)
 		}
 
-		dataSize, err := a.readInt()
+		dataSize, err := vr.readInt()
 		if err != nil {
-			return nil, fmt.Errorf("Reading property size: %w", err)
+			return nil, fmt.Errorf("Reading property size:\n%w", err)
 		}
 
-		index, err := a.readInt()
+		index, err := vr.readInt()
 		if err != nil {
-			return nil, fmt.Errorf("Reading property index: %w", err)
+			return nil, fmt.Errorf("Reading property index:\n%w", err)
 		}
 
-		var p Property
+		p, err := readProperty(propertyType.Name, dataSize, vr)
+		if err != nil {
+			return nil, fmt.Errorf("Reading propertyMap item %d: name:%s type:%s bytes:%d:\n%w", count, name, propertyType, dataSize, err)
+		}
 
-		switch propertyType.Name {
-
-		case "IntProperty":
-			fallthrough
-		case "Int8Property":
-			fallthrough
-		case "Int16Property":
-			fallthrough
-		case "Int32Property":
-			fallthrough
-		case "Int64Property":
-			p, err = readIntProperty(true, dataSize, a)
-
-		case "UIntProperty":
-			fallthrough
-		case "UInt8Property":
-			fallthrough
-		case "UInt16Property":
-			fallthrough
-		case "UInt32Property":
-			fallthrough
-		case "UInt64Property":
-			p, err = readIntProperty(false, dataSize, a)
-
-		case "FloatProperty":
-			fallthrough
-		case "DoubleProperty":
-			p, err = readFloatProperty(dataSize, a)
-
-		case "BoolProperty":
-			p, err = readBoolProperty(dataSize, a)
-
-		case "ByteProperty":
-			p, err = readEnumProperty(dataSize, a)
-
-		case "StrProperty":
-			p, err = readStringProperty(dataSize, a)
-
-		case "NameProperty":
-			p, err = readNameProperty(dataSize, a)
-
-		case "ArrayProperty":
-			p, err = readArrayProperty(dataSize, a)
-
-		case "StructProperty":
-			p, err = readStructProperty(dataSize, a)
-
-		case "ObjectProperty":
-			p, err = readObjectProperty(dataSize, a)
-
-		default:
-			return nil, fmt.Errorf("Unknown property type %s", propertyType)
+		if err != nil {
+			return nil, fmt.Errorf("Reading property:\n%w", err)
+		} else if p == nil {
+			// nil can be returned without error for unhandled or ignored properties
+			continue
 		}
 
 		key := name.String()
@@ -115,7 +112,43 @@ func readPropertyMap(a *Archive) (PropertyMap, error) {
 		}
 		propMap[index] = p
 		properties[key] = propMap
+		count++
 	}
 
 	return properties, nil
+}
+
+func readProperty(name string, dataSize int, vr valueReader) (Property, error) {
+	if propType, ok := propertyTypes[name]; ok {
+		return propType.reader(dataSize, vr)
+	}
+
+	return nil, fmt.Errorf("Unknown property type %s", name)
+}
+
+func readPropertyArray(name string, count, dataSize int, vr valueReader) ([]Property, error) {
+	propType, ok := propertyTypes[name]
+	if !ok {
+		return nil, fmt.Errorf("Unknown array property type %s", name)
+	}
+
+	if count == 0 {
+		return nil, nil
+	}
+
+	if propType.arrayReader != nil {
+		return propType.arrayReader(count, dataSize, vr)
+	}
+
+	var err error
+	result := make([]Property, count)
+	for i := range result {
+		itemSize := propType.defaultSize
+		result[i], err = propType.reader(itemSize, vr)
+		if err != nil {
+			return nil, fmt.Errorf("Reading basic array:\n%w", err)
+		}
+	}
+
+	return result, nil
 }
