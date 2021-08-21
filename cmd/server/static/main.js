@@ -1,23 +1,20 @@
 
-var colorFunc = function (row, type, set, meta) {
-    var index = meta.col - 12;
-    var value = row["color" + index];
-
+var colorFunc = function (data, type, row, meta) {
     var c = null;
-    if (value < 0) {
-        c = dyes[value+55]
+    if (data < 0) {
+        c = dyes[data+55]
     } else {
-        c = colors[value];
+        c = colors[data];
     }
 
     if (c) {
         return "<div class='swatch' style='background-color: "
             + c.color + ";'></div> " + c.id + ": " + c.name;
     } else {
-        if (value != 0) {
-            console.log("Unknown color value: " + value + " for slot " + index);
+        if (data != 0) {
+            console.log("Unknown color value: " + data + " for slot " + index);
         }
-        return "<div class='swatch'></div> " + value + ": Unused";
+        return "<div class='swatch'></div> " + data + ": Unused";
     }
 }
 
@@ -39,6 +36,10 @@ var showStats = function () {
     table.columns([42, 43, 44, 45, 46, 47, 48, 49]).visible(showTotal);
 };
 
+var fixedFloat = function (data, type, row, meta) {
+    return data.toFixed(0);
+}
+
 var columns = [
     {"data": "name", "title": "Name"},
     {"data": "world", "title": "World", "visible": false},
@@ -55,21 +56,21 @@ var columns = [
     {"data": "y", "visible": false},
     {"data": "z", "visible": false},
 
-    {"data": colorFunc, "title": "C0", "searchBuilderTitle": "Color 0", "visible": false},
-    {"data": colorFunc, "title": "C1", "searchBuilderTitle": "Color 1", "visible": false},
-    {"data": colorFunc, "title": "C2", "searchBuilderTitle": "Color 2", "visible": false},
-    {"data": colorFunc, "title": "C3", "searchBuilderTitle": "Color 3", "visible": false},
-    {"data": colorFunc, "title": "C4", "searchBuilderTitle": "Color 4", "visible": false},
-    {"data": colorFunc, "title": "C5", "searchBuilderTitle": "Color 5", "visible": false},
+    {"data": "color0", "render": colorFunc, "title": "C0", "searchBuilderTitle": "Color 0", "visible": false},
+    {"data": "color1", "render": colorFunc, "title": "C1", "searchBuilderTitle": "Color 1", "visible": false},
+    {"data": "color2", "render": colorFunc, "title": "C2", "searchBuilderTitle": "Color 2", "visible": false},
+    {"data": "color3", "render": colorFunc, "title": "C3", "searchBuilderTitle": "Color 3", "visible": false},
+    {"data": "color4", "render": colorFunc, "title": "C4", "searchBuilderTitle": "Color 4", "visible": false},
+    {"data": "color5", "render": colorFunc, "title": "C5", "searchBuilderTitle": "Color 5", "visible": false},
 
-    {"data": "health_current", "title": "H", "searchBuilderTitle": "Current Health", "visible": false},
-    {"data": "stamina_current", "title": "St", "searchBuilderTitle": "Current Stamina", "visible": false},
-    {"data": "torpor_current", "title": "T", "searchBuilderTitle": "Current Torpor", "visible": false},
-    {"data": "oxygen_current", "title": "O", "searchBuilderTitle": "Current Oxygen", "visible": false},
-    {"data": "food_current", "title": "F", "searchBuilderTitle": "Current Food", "visible": false},
-    {"data": "weight_current", "title": "W", "searchBuilderTitle": "Current Weight", "visible": false},
-    {"data": "melee_current", "title": "M", "searchBuilderTitle": "Current Melee", "visible": false},
-    {"data": "speed_current", "title": "Sp", "searchBuilderTitle": "Current Speed", "visible": false},
+    {"data": "health_current", "render": fixedFloat, "title": "H", "searchBuilderTitle": "Current Health", "visible": false},
+    {"data": "stamina_current", "render": fixedFloat, "title": "St", "searchBuilderTitle": "Current Stamina", "visible": false},
+    {"data": "torpor_current", "render": fixedFloat, "title": "T", "searchBuilderTitle": "Current Torpor", "visible": false},
+    {"data": "oxygen_current", "render": fixedFloat, "title": "O", "searchBuilderTitle": "Current Oxygen", "visible": false},
+    {"data": "food_current", "render": fixedFloat, "title": "F", "searchBuilderTitle": "Current Food", "visible": false},
+    {"data": "weight_current", "render": fixedFloat, "title": "W", "searchBuilderTitle": "Current Weight", "visible": false},
+    {"data": "melee_current", "render": fixedFloat, "title": "M", "searchBuilderTitle": "Current Melee", "visible": false},
+    {"data": "speed_current", "render": fixedFloat, "title": "Sp", "searchBuilderTitle": "Current Speed", "visible": false},
 
     {"data": "health_wild", "title": "H", "searchBuilderTitle": "Base Health", "visible": false},
     {"data": "stamina_wild", "title": "St", "searchBuilderTitle": "Base Stamina", "visible": false},
