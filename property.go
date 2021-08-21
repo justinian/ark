@@ -1,4 +1,4 @@
-package main
+package ark
 
 import (
 	"fmt"
@@ -16,29 +16,61 @@ func (pm PropertyMap) Get(name string, index int) Property {
 	return nil
 }
 
+func (pm PropertyMap) GetTyped(name string, index int, pt PropertyType) Property {
+	p := pm.Get(name, index)
+	if p != nil && p.Type() == pt {
+		return p
+	}
+	return nil
+}
+
+func (pm PropertyMap) GetString(name string, index int) string {
+	stringProp := pm.Get(name, index)
+	if stringProp != nil {
+		return stringProp.String()
+	}
+	return ""
+}
+
+func (pm PropertyMap) GetInt(name string, index int) int64 {
+	intProp := pm.GetTyped(name, index, IntPropertyType)
+	if intProp != nil {
+		return intProp.(*IntProperty).value
+	}
+	return 0
+}
+
+func (pm PropertyMap) GetFloat(name string, index int) float64 {
+	floatProp := pm.GetTyped(name, index, FloatPropertyType)
+	if floatProp != nil {
+		return float64(floatProp.(FloatProperty))
+	}
+	return 0
+}
+
 const (
-	UnknownProperty PropertyType = iota
+	UnknownPropertyType PropertyType = iota
 
-	IntProperty
-	FloatProperty
-	BoolProperty
-	EnumProperty
-	StringProperty
-	NameProperty
-	ArrayProperty
-	ObjectProperty
-	ByteArrayProperty
+	IntPropertyType
+	FloatPropertyType
+	BoolPropertyType
+	EnumPropertyType
+	StringPropertyType
+	NamePropertyType
+	ArrayPropertyType
+	ObjectPropertyType
+	ByteArrayPropertyType
 
-	StructColorProperty
-	StructLinearColorProperty
-	StructVectorProperty
-	StructVector2DProperty
-	StructQuatProperty
+	StructColorPropertyType
+	StructLinearColorPropertyType
+	StructVectorPropertyType
+	StructVector2DPropertyType
+	StructQuatPropertyType
 
-	StructNetIdProperty
-	StructDoublesProperty
+	StructNetIdPropertyType
+	StructDoublesPropertyType
 
-	StructPropertyListProperty
+	StructPropertyListPropertyType
 )
 
 type Property interface {

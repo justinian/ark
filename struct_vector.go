@@ -1,4 +1,4 @@
-package main
+package ark
 
 import "fmt"
 
@@ -7,7 +7,7 @@ type vector2DProperty struct {
 	Y float32 `json:"y"`
 }
 
-func (p *vector2DProperty) Type() PropertyType { return StructVector2DProperty }
+func (p *vector2DProperty) Type() PropertyType { return StructVector2DPropertyType }
 
 func (p *vector2DProperty) String() string {
 	return fmt.Sprintf("StructVector2DProperty()")
@@ -33,7 +33,7 @@ type vectorProperty struct {
 	Z float32 `json:"z"`
 }
 
-func (p *vectorProperty) Type() PropertyType { return StructVectorProperty }
+func (p *vectorProperty) Type() PropertyType { return StructVectorPropertyType }
 
 func (p *vectorProperty) String() string {
 	return fmt.Sprintf("StructVectorProperty()")
@@ -65,7 +65,7 @@ type quatProperty struct {
 	W float32 `json:"w"`
 }
 
-func (p *quatProperty) Type() PropertyType { return StructQuatProperty }
+func (p *quatProperty) Type() PropertyType { return StructQuatPropertyType }
 
 func (p *quatProperty) String() string {
 	return fmt.Sprintf("StructQuatProperty()")

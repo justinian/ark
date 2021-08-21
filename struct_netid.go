@@ -1,4 +1,4 @@
-package main
+package ark
 
 import "fmt"
 
@@ -7,7 +7,7 @@ type netIdProperty struct {
 	NetId   string `json:"netId"`
 }
 
-func (p *netIdProperty) Type() PropertyType { return StructNetIdProperty }
+func (p *netIdProperty) Type() PropertyType { return StructNetIdPropertyType }
 
 func (p *netIdProperty) String() string {
 	return fmt.Sprintf("StructNetIdProperty()")

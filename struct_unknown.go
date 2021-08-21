@@ -1,4 +1,4 @@
-package main
+package ark
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ type unknownStructProperty struct {
 	value []byte
 }
 
-func (p *unknownStructProperty) Type() PropertyType { return UnknownProperty }
+func (p *unknownStructProperty) Type() PropertyType { return UnknownPropertyType }
 
 func (p *unknownStructProperty) MarshalJSON() ([]byte, error) {
 	val := struct {
@@ -33,11 +33,17 @@ func readUnknownStruct(kind Name, dataSize int, vr valueReader) (Property, error
 		return nil, fmt.Errorf("Reading unknown value: short read %d/%d", n, dataSize)
 	}
 
+	return &unknownStructProperty{kind, value}, nil
+}
+
+func dumpBytes(data []byte) {
 	const line_width = 16
 
-	fmt.Printf("Unknown property: [%4x bytes] %s\n", dataSize, kind)
 	fmt.Println("========================================================")
+
+	dataSize := len(data)
 	var offset int = 0
+
 	for offset < dataSize {
 		fmt.Printf("%04x:", offset)
 		var limit int = offset + line_width
@@ -45,13 +51,18 @@ func readUnknownStruct(kind Name, dataSize int, vr valueReader) (Property, error
 			if offset%4 == 0 && offset%line_width != 0 {
 				fmt.Printf(" ")
 			}
-			fmt.Printf(" %02x", value[offset])
+			fmt.Printf(" %02x", data[offset])
 			offset++
 		}
 		fmt.Println("")
 	}
+
 	fmt.Println("========================================================")
 	fmt.Println("")
+}
 
-	return &unknownStructProperty{kind, value}, nil
+func (p *unknownStructProperty) dump() {
+
+	fmt.Printf("Unknown property: [%4x bytes] %s\n", len(p.value), p.kind)
+	dumpBytes(p.value)
 }

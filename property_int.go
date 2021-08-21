@@ -1,23 +1,23 @@
-package main
+package ark
 
 import (
 	"encoding/json"
 	"fmt"
 )
 
-type intProperty struct {
+type IntProperty struct {
 	bytes  uint8
 	signed bool
 	value  int64
 }
 
-func (p *intProperty) Type() PropertyType { return IntProperty }
+func (p *IntProperty) Type() PropertyType { return IntPropertyType }
 
-func (p *intProperty) MarshalJSON() ([]byte, error) {
+func (p *IntProperty) MarshalJSON() ([]byte, error) {
 	return json.Marshal(p.value)
 }
 
-func (p *intProperty) String() string {
+func (p *IntProperty) String() string {
 	pre := "I"
 	if !p.signed {
 		pre = "UI"
@@ -40,7 +40,7 @@ func readIntPropertyBase(signed bool, dataSize int, vr valueReader) (Property, e
 		return nil, fmt.Errorf("Reading int value: %w", err)
 	}
 
-	return &intProperty{
+	return &IntProperty{
 		bytes:  uint8(dataSize),
 		signed: signed,
 		value:  value,

@@ -1,2 +1,6 @@
 *.ark
-/ark
+*.db
+*.bak
+cmd/server/server
+cmd/loader/loader
+*.json

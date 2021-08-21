@@ -1,4 +1,4 @@
-package main
+package ark
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ type boolProperty struct {
 	value bool
 }
 
-func (p *boolProperty) Type() PropertyType { return BoolProperty }
+func (p *boolProperty) Type() PropertyType { return BoolPropertyType }
 
 func (p *boolProperty) MarshalJSON() ([]byte, error) {
 	return json.Marshal(p.value)

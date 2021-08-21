@@ -1,4 +1,4 @@
-package main
+package ark
 
 type Location struct {
 	X float32
@@ -10,36 +10,36 @@ type Location struct {
 	Roll  float32
 }
 
-func readLocation(a *Archive) (Location, error) {
+func readLocation(vr valueReader) (Location, error) {
 	var err error
 	var l Location
 
-	l.X, err = a.readFloat()
+	l.X, err = vr.readFloat()
 	if err != nil {
 		return l, err
 	}
 
-	l.Y, err = a.readFloat()
+	l.Y, err = vr.readFloat()
 	if err != nil {
 		return l, err
 	}
 
-	l.Z, err = a.readFloat()
+	l.Z, err = vr.readFloat()
 	if err != nil {
 		return l, err
 	}
 
-	l.Pitch, err = a.readFloat()
+	l.Pitch, err = vr.readFloat()
 	if err != nil {
 		return l, err
 	}
 
-	l.Yaw, err = a.readFloat()
+	l.Yaw, err = vr.readFloat()
 	if err != nil {
 		return l, err
 	}
 
-	l.Roll, err = a.readFloat()
+	l.Roll, err = vr.readFloat()
 	if err != nil {
 		return l, err
 	}

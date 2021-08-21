@@ -1,4 +1,4 @@
-package main
+package ark
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 type stringProperty string
 
-func (p stringProperty) Type() PropertyType { return StringProperty }
+func (p stringProperty) Type() PropertyType { return StringPropertyType }
 func (p stringProperty) String() string     { return string(p) }
 
 func readStringProperty(dataSize int, vr valueReader) (Property, error) {

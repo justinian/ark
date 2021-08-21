@@ -1,4 +1,4 @@
-package main
+package ark
 
 import (
 	"encoding/binary"
@@ -40,8 +40,6 @@ func OpenArchive(path string) (*Archive, error) {
 		return nil, err
 	}
 
-	fmt.Printf("Parsed archive header version %d\n", a.Version)
-
 	if a.Version <= 8 {
 		return nil, fmt.Errorf("Save format version %d file is too old.", a.Version)
 	}
@@ -52,19 +50,7 @@ func OpenArchive(path string) (*Archive, error) {
 		return nil, fmt.Errorf("Reading archive name table:\n%w", err)
 	}
 
+	a.propertiesOffset = int(a.PropertiesBlockOffset)
+
 	return a, nil
-}
-
-func (a *Archive) readProperties(offset int) (PropertyMap, error) {
-	vr, err := a.subReaderAt(offset + int(a.PropertiesBlockOffset))
-	if err != nil {
-		return nil, err
-	}
-
-	properties, err := readPropertyMap(vr)
-	if err != nil {
-		return nil, fmt.Errorf("Reading property map:\n%w", err)
-	}
-
-	return properties, nil
 }

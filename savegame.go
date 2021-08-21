@@ -1,18 +1,18 @@
-package main
+package ark
 
 import (
 	"fmt"
+	"strings"
 )
 
 type SaveGame struct {
-	GameTime      float32                  `json:"gameTime"`
-	SaveCount     int                      `json:"saveCount"`
-	DataFiles     []string                 `json:"dataFiles"`
-	EmbeddedData  []*Embed                 `json:"embeddedData"`
-	DataFileMap   map[int][]string         `json:"dataFileMap"`
-	Objects       []*GameObject            `json:"gameObjects"`
-	ObjectMap     map[string][]*GameObject `json:"objectMap"`
-	StoredObjects []*GameObject            `json:"storedObjects"`
+	GameTime     float32              `json:"gameTime"`
+	SaveCount    int                  `json:"saveCount"`
+	DataFiles    []string             `json:"dataFiles"`
+	EmbeddedData []*Embed             `json:"embeddedData"`
+	DataFileMap  map[int][]string     `json:"dataFileMap"`
+	Objects      [][]*GameObject      `json:"objectLists"`
+	NameMap      map[Name]*GameObject `json:"-"`
 }
 
 func ReadSaveGame(a *Archive) (*SaveGame, error) {
@@ -44,12 +44,26 @@ func ReadSaveGame(a *Archive) (*SaveGame, error) {
 		return nil, err
 	}
 
-	err = s.readGameObjects(a)
+	objects, err := s.readGameObjects(a)
 	if err != nil {
 		return nil, err
 	}
 
-	s.findCryopods(a)
+	s.NameMap = make(map[Name]*GameObject)
+	for _, o := range objects {
+		if len(o.Names) == 1 {
+			s.NameMap[o.Names[0]] = o
+		}
+	}
+
+	storedObjects, err := s.findCryopods(a, objects)
+	if err != nil {
+		return nil, err
+	}
+
+	s.Objects = make([][]*GameObject, len(storedObjects)+1)
+	s.Objects = append(s.Objects, objects)
+	s.Objects = append(s.Objects, storedObjects...)
 
 	return &s, nil
 }
@@ -59,8 +73,6 @@ func (s *SaveGame) readEmbeds(a *Archive) error {
 	if err != nil {
 		return fmt.Errorf("Reading number of embedded entries:\n%w", err)
 	}
-
-	fmt.Printf("Reading %d embedded data items\n", numEmbeds)
 
 	s.EmbeddedData = make([]*Embed, numEmbeds)
 	for i := range s.EmbeddedData {
@@ -80,8 +92,6 @@ func (s *SaveGame) readDataFileMap(a *Archive) error {
 		return fmt.Errorf("Reading number of object map entries:\n%w", err)
 	}
 
-	fmt.Printf("Reading %d object map entries\n", mapCount)
-
 	s.DataFileMap = make(map[int][]string)
 	for i := 0; i < mapCount; i++ {
 		level, err := a.readInt()
@@ -93,8 +103,6 @@ func (s *SaveGame) readDataFileMap(a *Archive) error {
 		if err != nil {
 			return fmt.Errorf("Reading object map count:\n%w", err)
 		}
-
-		fmt.Printf("   Object map for level %d: %d entries\n", level, count)
 
 		names := make([]string, count)
 		for j := range names {
@@ -110,45 +118,46 @@ func (s *SaveGame) readDataFileMap(a *Archive) error {
 	return nil
 }
 
-func (s *SaveGame) readGameObjects(a *Archive) error {
-	count, err := a.readInt()
+func (s *SaveGame) readGameObjects(vr valueReader) ([]*GameObject, error) {
+	count, err := vr.readInt()
 	if err != nil {
-		return fmt.Errorf("Reading number of objects:\n%w", err)
+		return nil, fmt.Errorf("Reading number of objects:\n%w", err)
 	}
 
-	fmt.Printf("Reading %d game objects\n", count)
-
-	s.Objects = make([]*GameObject, count)
-	s.ObjectMap = make(map[string][]*GameObject, count)
-	for i := range s.Objects {
-		obj, err := readGameObject(a)
+	objects := make([]*GameObject, count)
+	for i := range objects {
+		obj, err := readGameObject(vr)
 		if err != nil {
-			return fmt.Errorf("Reading object:\n%w", err)
+			return nil, fmt.Errorf("Reading object %d/%d:\n%w", i, count, err)
 		}
 
-		s.Objects[i] = obj
-		for i := range obj.Names {
-			key := obj.Names[i].String()
-			s.ObjectMap[key] = append(s.ObjectMap[key], obj)
-		}
-	}
-
-	for _, o := range s.Objects {
-		o.Properties, err = a.readProperties(o.propertiesOffset)
+		obj.Properties, err = vr.readProperties(obj.propertiesOffset)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("Reading object properties:\n%w", err)
 		}
+
+		objects[i] = obj
 	}
-	return nil
+
+	return objects, nil
 }
 
-func (s *SaveGame) readDino(vr valueReader) error {
-	return nil
-}
+func (s *SaveGame) findCryopods(a *Archive, objects []*GameObject) ([][]*GameObject, error) {
+	var allStoredObjects [][]*GameObject
 
-func (s *SaveGame) findCryopods(a *Archive) {
-	for _, o := range s.Objects {
-		if o.isCryopod() {
+	for _, o := range objects {
+		if strings.Contains(o.ClassName.Name, "Cryop") ||
+			strings.Contains(o.ClassName.Name, "SoulTrap_") {
+
+			var parent *GameObject
+			ownerInventoryProp := o.Properties.Get("OwnerInventory", 0)
+			if ownerInventoryProp != nil {
+				containerId := ownerInventoryProp.(*ObjectProperty).Id
+				container := objects[containerId]
+				parentName := container.Names[len(container.Names)-1]
+				parent = s.NameMap[parentName]
+			}
+
 			customItemDatas := o.Properties.Get("CustomItemDatas", 0)
 			if customItemDatas == nil {
 				continue
@@ -224,12 +233,23 @@ func (s *SaveGame) findCryopods(a *Archive) {
 				}
 
 				vr := &sliceValueReader{
-					data:      []byte(creatureBytes),
-					nameTable: a.nameTable,
+					data: []byte(creatureBytes),
 				}
-				s.readDino(vr)
+
+				storedObjects, err := s.readGameObjects(vr)
+				if err != nil {
+					return nil, fmt.Errorf("Reading stored objects:\n%w", err)
+				}
+
+				for _, o := range storedObjects {
+					o.IsCryopod = true
+					o.Parent = parent
+				}
+
+				allStoredObjects = append(allStoredObjects, storedObjects)
 			}
 		}
 	}
 
+	return allStoredObjects, nil
 }

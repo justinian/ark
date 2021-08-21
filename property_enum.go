@@ -1,4 +1,4 @@
-package main
+package ark
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ type enumProperty struct {
 	Value Name `json:"value"`
 }
 
-func (p *enumProperty) Type() PropertyType { return EnumProperty }
+func (p *enumProperty) Type() PropertyType { return EnumPropertyType }
 
 func (p *enumProperty) String() string {
 	return fmt.Sprintf("EnumProperty(%s : %s)", p.Enum, p.Value)

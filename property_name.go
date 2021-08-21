@@ -1,10 +1,10 @@
-package main
+package ark
 
 import (
 	"fmt"
 )
 
-func (p Name) Type() PropertyType { return NameProperty }
+func (p Name) Type() PropertyType { return NamePropertyType }
 
 func readNameProperty(dataSize int, vr valueReader) (Property, error) {
 	value, err := vr.readName()

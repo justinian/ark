@@ -1,10 +1,10 @@
-package main
+package ark
 
 import (
 	"fmt"
 )
 
-func (p PropertyMap) Type() PropertyType { return StructPropertyListProperty }
+func (p PropertyMap) Type() PropertyType { return StructPropertyListPropertyType }
 
 func (p PropertyMap) String() string {
 	return fmt.Sprintf("StructPropertyListProperty(%d entries)", len(p))

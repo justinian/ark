@@ -1,27 +1,16 @@
-package main
+package ark
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
-	"math"
 )
 
-type floatProperty struct {
-	value float64
-}
+type FloatProperty float64
 
-func (p *floatProperty) Type() PropertyType { return FloatProperty }
+func (p FloatProperty) Type() PropertyType { return FloatPropertyType }
 
-func (p *floatProperty) MarshalJSON() ([]byte, error) {
-	if math.IsNaN(p.value) {
-		return json.Marshal(nil)
-	}
-	return json.Marshal(p.value)
-}
-
-func (p *floatProperty) String() string {
-	return fmt.Sprintf("FloatProperty(%f)", p.value)
+func (p FloatProperty) String() string {
+	return fmt.Sprintf("FloatProperty(%f)", float64(p))
 }
 
 func readFloatProperty(dataSize int, vr valueReader) (Property, error) {
@@ -41,14 +30,12 @@ func readFloatProperty(dataSize int, vr valueReader) (Property, error) {
 		return nil, fmt.Errorf("Reading float value: %w", err)
 	}
 
-	return &floatProperty{
-		value: value,
-	}, nil
+	return FloatProperty(value), nil
 }
 
 type structDoublesProperty []float64
 
-func (p structDoublesProperty) Type() PropertyType { return StructDoublesProperty }
+func (p structDoublesProperty) Type() PropertyType { return StructDoublesPropertyType }
 
 func (p structDoublesProperty) String() string {
 	return fmt.Sprintf("StructDoublesProperty[%v]", len(p))

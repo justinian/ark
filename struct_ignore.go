@@ -1,4 +1,4 @@
-package main
+package ark
 
 func readIgnoredStruct(dataSize int, vr valueReader) (Property, error) {
 	vr.skip(dataSize)

@@ -1,4 +1,4 @@
-package main
+package ark
 
 import "fmt"
 
@@ -7,14 +7,14 @@ const (
 	ObjectTypePath int = 1
 )
 
-type objectProperty struct {
+type ObjectProperty struct {
 	Id   int  `json:"id"`
 	Path Name `json:"path"`
 }
 
-func (p *objectProperty) Type() PropertyType { return ObjectProperty }
+func (p *ObjectProperty) Type() PropertyType { return ObjectPropertyType }
 
-func (p *objectProperty) String() string {
+func (p *ObjectProperty) String() string {
 	var ref string
 	if p.Id != 0 {
 		ref = fmt.Sprintf("int:%d", p.Id)
@@ -43,7 +43,7 @@ func readObjectProperty(dataSize int, vr valueReader) (Property, error) {
 		return nil, fmt.Errorf("Unsupported object reference typ %d", objType)
 	}
 
-	return &objectProperty{
+	return &ObjectProperty{
 		Id:   objId,
 		Path: objPath,
 	}, nil

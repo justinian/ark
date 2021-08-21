@@ -1,4 +1,4 @@
-package main
+package ark
 
 import "fmt"
 
@@ -9,7 +9,7 @@ type colorProperty struct {
 	A uint8
 }
 
-func (p *colorProperty) Type() PropertyType { return StructColorProperty }
+func (p *colorProperty) Type() PropertyType { return StructColorPropertyType }
 
 func (p *colorProperty) String() string {
 	return fmt.Sprintf("StructColorProperty()")
@@ -46,7 +46,7 @@ type linearColorProperty struct {
 	A float32
 }
 
-func (p *linearColorProperty) Type() PropertyType { return StructLinearColorProperty }
+func (p *linearColorProperty) Type() PropertyType { return StructLinearColorPropertyType }
 
 func (p *linearColorProperty) String() string {
 	return fmt.Sprintf("StructLinearColorProperty()")

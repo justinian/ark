@@ -1,4 +1,4 @@
-package main
+package ark
 
 import (
 	"bytes"
@@ -20,13 +20,16 @@ type valueReader interface {
 	readString() (string, error)
 	readBool() (bool, error)
 	readName() (Name, error)
+
 	readStringTable() ([]string, error)
+	readProperties(offset int) (PropertyMap, error)
 }
 
 type sliceValueReader struct {
-	data      []byte
-	nameTable []string
-	offset    int
+	data             []byte
+	nameTable        []string
+	offset           int
+	propertiesOffset int
 }
 
 func (vr *sliceValueReader) skip(size int) error {
@@ -113,6 +116,14 @@ func (vr *sliceValueReader) readBool() (bool, error) {
 }
 
 func (vr *sliceValueReader) readName() (Name, error) {
+	if vr.nameTable == nil {
+		s, err := vr.readString()
+		if err != nil {
+			return Name{}, fmt.Errorf("Error reading string as Name:\n%w", err)
+		}
+		return Name{s, 0}, nil
+	}
+
 	index, err := vr.readInt()
 	if err != nil {
 		return Name{}, err
@@ -151,6 +162,17 @@ func (vr *sliceValueReader) readStringTable() ([]string, error) {
 	}
 
 	return stringTable, nil
+}
+
+func (vr *sliceValueReader) readProperties(offset int) (PropertyMap, error) {
+	svr, _ := vr.subReaderAt(offset + vr.propertiesOffset)
+
+	properties, err := readPropertyMap(svr)
+	if err != nil {
+		return nil, fmt.Errorf("Reading properties block:\n%w", err)
+	}
+
+	return properties, nil
 }
 
 func (vr *sliceValueReader) subReader(length int) (valueReader, error) {

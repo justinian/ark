@@ -1,4 +1,4 @@
-package main
+package ark
 
 import "fmt"
 
@@ -7,7 +7,7 @@ type arrayProperty struct {
 	Properties []Property `json:"properties"`
 }
 
-func (p *arrayProperty) Type() PropertyType { return ArrayProperty }
+func (p *arrayProperty) Type() PropertyType { return ArrayPropertyType }
 
 func (p *arrayProperty) String() string {
 	return fmt.Sprintf("ArrayProperty(%s[%d])", p.ArrayType, len(p.Properties))
@@ -15,7 +15,7 @@ func (p *arrayProperty) String() string {
 
 type byteArrayProperty []byte
 
-func (p byteArrayProperty) Type() PropertyType { return ByteArrayProperty }
+func (p byteArrayProperty) Type() PropertyType { return ByteArrayPropertyType }
 
 func (p byteArrayProperty) String() string {
 	return fmt.Sprintf("ByteArrayProperty[%d]", len(p))
