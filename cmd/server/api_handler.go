@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 )
 
 type apiHandler struct {
+	lock sync.Mutex
 	db   *sqlx.DB
 	stmt *sqlx.Stmt
 }
@@ -100,6 +102,9 @@ type dinoResult struct {
 }
 
 func (ah *apiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ah.lock.Lock()
+	defer ah.lock.Unlock()
+
 	if ah.stmt == nil {
 		stmt, err := ah.db.Preparex(getAllDinos)
 		if err != nil {

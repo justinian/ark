@@ -23,6 +23,35 @@ func loadSavefile(filename string) (*ark.SaveGame, error) {
 	return save, nil
 }
 
+func createDatabase(dbname string, specfiles, savefiles []string) error {
+	db, err := openDatabase(dbname)
+	if err != nil {
+		return fmt.Errorf("Error opening database %s:\n%w", dbname, err)
+	}
+	defer db.Close()
+
+	saves := make([]*ark.SaveGame, len(savefiles))
+	for i, f := range savefiles {
+		save, err := loadSavefile(f)
+		if err != nil {
+			return fmt.Errorf("Loading '%s':\n%w", f, err)
+		}
+		saves[i] = save
+	}
+
+	classNames, err := readSpecFiles(specfiles...)
+	if err != nil {
+		return fmt.Errorf("Reading spec files:\n%w", err)
+	}
+
+	err = processSaves(db, saves, classNames)
+	if err != nil {
+		return fmt.Errorf("Writing database:\n%w", err)
+	}
+
+	return nil
+}
+
 func main() {
 	var output string
 	var specfiles []string
@@ -38,32 +67,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := openDatabase(output)
+	tmp := output + ".tmp"
+	err := createDatabase(tmp, specfiles, args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error opening database %s: %v\n", output, err)
-		os.Exit(1)
-	}
-	defer db.Close()
-
-	saves := make([]*ark.SaveGame, len(args))
-	for i, f := range args {
-		save, err := loadSavefile(f)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Loading '%s':\n%v\n", f, err)
-			os.Exit(1)
-		}
-		saves[i] = save
-	}
-
-	classNames, err := readSpecFiles(specfiles...)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Reading spec files:\n%v\n", err)
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 
-	err = processSaves(db, saves, classNames)
+	err = os.Rename(tmp, output)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Writing database:\n%v\n", err)
+		fmt.Fprintf(os.Stderr, "Renaming output file: %v\n", err)
 		os.Exit(1)
 	}
 }
