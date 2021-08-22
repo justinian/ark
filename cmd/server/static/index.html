@@ -28,6 +28,20 @@
             $( '#showTotal' ).on( 'click', showStats );
             $( '#showCurrent' ).on( 'click', showStats );
             $( '#showColor' ).on( 'click', showStats );
+
+            table.on( "select", function () {
+                row = table.row({"selected":true}).data();
+                if (row.name) {
+                    $( '#dinoName' ).html(row.name);
+                } else {
+                    $( '#dinoName' ).html("Unnamed " + row.class_name);
+                }
+
+                $( '#dinoWorldName' ).html("World: " + row.world);
+
+                var canvas = document.getElementById("dinoWorldMap");
+                drawMap(canvas, row.world, row.x, row.y);
+            });
         });
     </script>
 
@@ -75,6 +89,13 @@
             </div>
 
             <div class="row my-2 p-2 rounded bg-light" id="searchBuilderDiv">
+            </div>
+
+            <div class="row my-2 p-2 rounded bg-light" id="dinoInfo">
+                <h3 id="dinoName">No Selection</h3>
+
+                <p id="dinoWorldName"></p>
+                <canvas id="dinoWorldMap"></canvas>
             </div>
         </div>
 
