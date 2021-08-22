@@ -127,7 +127,11 @@ func processSaves(db *sql.DB, saves []*ark.SaveGame, classNames map[string]strin
 				className := obj.ClassName.Name
 				if _, ok := classes[className]; !ok {
 					classes[className] = classCount
-					name := classNames[className]
+					name, ok := classNames[className]
+					if !ok {
+						// chomp the _C suffix
+						name = className[:len(className)-2]
+					}
 					_, err = stmt.Exec(classCount, className, name)
 					if err != nil {
 						return fmt.Errorf("Inserting class: (%d, %s):\n%w", classCount, name, err)

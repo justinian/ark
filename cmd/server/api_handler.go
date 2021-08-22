@@ -18,6 +18,7 @@ SELECT
 	d.name,
 	w.name as world,
 	c1.name as class_name,
+	d.dino_id1|d.dino_id2 as dino_id,
 	level_wild,
 	level_tamed,
 	level_total,
@@ -41,6 +42,7 @@ type dinoResult struct {
 	Name        string `json:"name" db:"name"`
 	World       string `json:"world" db:"world"`
 	Class       string `json:"class_name" db:"class_name"`
+	DinoId      int    `json:"dino_id" db:"dino_id"`
 	LevelsWild  int    `json:"levels_wild" db:"level_wild"`
 	LevelsTamed int    `json:"levels_tamed" db:"level_tamed"`
 	LevelsTotal int    `json:"levels_total" db:"level_total"`

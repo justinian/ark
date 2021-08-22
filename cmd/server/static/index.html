@@ -37,7 +37,36 @@
                     $( '#dinoName' ).html("Unnamed " + row.class_name);
                 }
 
-                $( '#dinoWorldName' ).html("World: " + row.world);
+                $( '#dinoWorldName' ).html(row.world);
+                $( '#dinoId' ).html(row.dino_id);
+                $( '#dinoClass' ).html(row.class_name);
+
+                if (row.is_cryo) {
+                    if (row.parent_name) {
+                        $( '#dinoStored' ).html(row.parent_name);
+                    } else {
+                        $( '#dinoStored' ).html(row.parent_class);
+                    }
+                } else {
+                    $( '#dinoStored' ).html("");
+                }
+
+                for (var i = 0; i < 6; i++) {
+                    var id = "#dinoColor" + i;
+                    var color = row["color" + i];
+                    if (color >= 0) {
+                        c = colors[color];
+                    } else {
+                        c = dyes[color+55];
+                    }
+                    if (c === undefined || c === null) {
+                        $( id ).css("background-color", "");
+                        $( id ).css("border", "");
+                    } else {
+                        $( id ).css("background-color", c.color);
+                        $( id ).css("border", "1px solid black");
+                    }
+                }
 
                 var canvas = document.getElementById("dinoWorldMap");
                 drawMap(canvas, row.world, row.x, row.y);
@@ -52,6 +81,10 @@
         width: 18px;
         margin-right: 10px;
         border: 1px solid black;
+    }
+
+    .dinoInfo {
+        font-size: smaller;
     }
     </style>
 </head>
@@ -94,7 +127,50 @@
             <div class="row my-2 p-2 rounded bg-light" id="dinoInfo">
                 <h3 id="dinoName">No Selection</h3>
 
-                <p id="dinoWorldName"></p>
+                <div class="p-3">
+                <table width="100%" class="dinoInfo table">
+                    <tr>
+                        <th>World</th>
+                        <td id="dinoWorldName"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Class</th>
+                        <td id="dinoClass"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Dino ID</th>
+                        <td id="dinoId"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Stored In</th>
+                        <td id="dinoStored"></td>
+                    </tr>
+
+                </table>
+                </div>
+
+                <div class="p-3">
+                    <table width="100%">
+                    <tr>
+                        <th>0</th>
+                        <th>1</th>
+                        <th>2</th>
+                        <th>3</th>
+                        <th>4</th>
+                        <th>5</th>
+                    </tr>
+                    <tr>
+                        <td id="dinoColor0">&nbsp;</td>
+                        <td id="dinoColor1">&nbsp;</td>
+                        <td id="dinoColor2">&nbsp;</td>
+                        <td id="dinoColor3">&nbsp;</td>
+                        <td id="dinoColor4">&nbsp;</td>
+                        <td id="dinoColor5">&nbsp;</td>
+                    </tr>
+
                 <canvas id="dinoWorldMap"></canvas>
             </div>
         </div>
