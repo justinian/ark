@@ -6,17 +6,17 @@ import (
 )
 
 type BoolProperty struct {
-	value bool
+	Value bool
 }
 
 func (p *BoolProperty) Type() PropertyType { return BoolPropertyType }
 
 func (p *BoolProperty) MarshalJSON() ([]byte, error) {
-	return json.Marshal(p.value)
+	return json.Marshal(p.Value)
 }
 
 func (p *BoolProperty) String() string {
-	return fmt.Sprintf("BoolProperty(%v)", p.value)
+	return fmt.Sprintf("BoolProperty(%v)", p.Value)
 }
 
 func readBoolProperty(dataSize int, vr valueReader) (Property, error) {
@@ -26,7 +26,7 @@ func readBoolProperty(dataSize int, vr valueReader) (Property, error) {
 	}
 
 	return &BoolProperty{
-		value: value != 0,
+		Value: value != 0,
 	}, nil
 }
 
